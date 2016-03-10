@@ -75,7 +75,3 @@ class MacauSlot:
                             "away": var[i + 3]
                         })
         return games
-
-
-print Lottery500.list()
-print MacauSlot.list()
