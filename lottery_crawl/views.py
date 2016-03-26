@@ -21,8 +21,8 @@ def list_lottery_500(request):
     games = []
     for m in r.finditer(content):
         fid = m.group(2)
-        home_team = m.group(3).replace("  ", "")
-        away_team = m.group(4).replace("  ", "")
+        home_team = m.group(3).replace(" ", "")
+        away_team = m.group(4).replace(" ", "")
         match_time = m.group(6).replace("开赛时间：", "")
         odds = [m.group(9), m.group(11), m.group(13)]
         games.append({
@@ -43,7 +43,7 @@ def list_lottery_500(request):
 def list_hkjc(request):
     url = "http://bet.hkjc.com/football/index.aspx"
     content = load_url(url)
-    r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>")
+    r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
     games = []
     for m in r.finditer(content):
         fid = m.group(1)
