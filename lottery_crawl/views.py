@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import date
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from lib.langconv import *
 from lottery.common import *
 from serializers import *
 
@@ -23,6 +25,32 @@ def list_lottery_500(request):
         away_team = m.group(4).replace("  ", "")
         match_time = m.group(6).replace("开赛时间：", "")
         odds = [m.group(9), m.group(11), m.group(13)]
+        games.append({
+            "id": fid,
+            "home": home_team,
+            "away": away_team,
+            "t": match_time,
+            "odds": {
+                "home": odds[0],
+                "draw": odds[1],
+                "away": odds[2]
+            }
+        })
+    return Response(games)
+
+
+@api_view(['GET'])
+def list_hkjc(request):
+    url = "http://bet.hkjc.com/football/index.aspx"
+    content = load_url(url)
+    r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>")
+    games = []
+    for m in r.finditer(content):
+        fid = m.group(1)
+        home_team = Converter('zh-hans').convert(m.group(3).decode('utf-8')).encode('utf-8')
+        away_team = Converter('zh-hans').convert(m.group(4).decode('utf-8')).encode('utf-8')
+        match_time = str(date.today().year) + "-" + m.group(6)[3:5] + "-" + m.group(6)[:2] + m.group(6)[5:]
+        odds = [m.group(8), m.group(10), m.group(12)]
         games.append({
             "id": fid,
             "home": home_team,
