@@ -16,7 +16,9 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'lottery_crawl'
+    'lottery_alias',
+    'lottery_market',
+    'lottery_market_asian'
 )
 
 MIDDLEWARE_CLASSES = (
