@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pytz
 import re
 from datetime import date
 
@@ -14,44 +13,23 @@ from lottery.common import *
 from serializers import *
 
 
-def query_market(src):
+def market(src):
     try:
         m = Market.objects.filter(src=src).order_by("-update").first()
         if m is not None and (datetime.now() - m.update).seconds < 300:
+            log("Request market source " + src + " cached.")
             return {
                 "update": MarketSerializer(m).data["update"],
                 "markets": MarketSerializer(Market.objects.filter(src=src, update=m.update), many=True).data
             }
         else:
+            log("Request market source " + src + " not cached.")
             return None
     except ObjectDoesNotExist:
         return None
 
 
-@api_view(['GET'])
-def market(request):
-    if "src" in request.GET:
-        src = request.GET["src"]
-        markets = query_market(src)
-        if markets is not None:
-            return Response(markets)
-        elif src == "5C":
-            five(request)
-            return Response(query_market(src))
-        elif src == "HK":
-            hkjc(request)
-            return Response(query_market(src))
-        elif src == "BF":
-            betfair(request)
-            return Response(query_market(src))
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def five(request):
+def five():
     url = "http://trade.500.com/jczq/"
     r = re.compile(r"<tr zid=(.*?)fid=\"(.*?)\" homesxname=\"(.*?)\" awaysxname=\"(.*?)\"(.*?)class=\"match_time\" title=\"(.*?)\"(.*?)<div class=\"bet_odds\">(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)</div>(.*?)</tr>", re.MULTILINE | re.DOTALL)
     content = load_url(url, "GBK")
@@ -71,16 +49,17 @@ def five(request):
         game.away = away_team
         game.odd = odd
         game.save()
-    return Response(query_market("5C"))
+    return market("5C")
 
 
-@api_view(['GET'])
-def hkjc(request):
-    url = "http://bet.hkjc.com/football/index.aspx"
-    r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
-    if "lang" in request.GET and request.GET["lang"] == "en":
-        url = "http://bet.hkjc.com/football/index.aspx?lang=" + request.GET["lang"]
+def hkjc(lang):
+    url = "http://bet.hkjc.com/football/index.aspx?lang=" + lang
+    if lang == "en":
         r = re.compile(r"rmid(.*?)\">(.*?)title=\"Head to Head\">(.*?) <label class='lblvs'>vs</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
+    elif lang == "ch":
+        r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
+    else:
+        return None
     content = load_url(url)
     update = datetime.now()
     for m in r.finditer(content):
@@ -91,18 +70,17 @@ def hkjc(request):
         odds = [m.group(8), m.group(10), m.group(12)]
         odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
         odd.save()
-        game, _ = Market.objects.update_or_create(src='HK', market=fid)
+        game, _ = Market.objects.update_or_create(src='HK-' + lang.upper(), market=fid)
         game.update = update
         game.t = match_time
         game.home = home_team
         game.away = away_team
         game.odd = odd
         game.save()
-    return Response(query_market("HK"))
+    return market("HK-" + lang.upper())
 
 
-@api_view(['GET'])
-def betfair(request):
+def betfair():
     update = datetime.now()
     for coupon_id in range(1, 7):
         url = "http://www.betfair.com/exchange/football/coupon?id=" + str(coupon_id)
@@ -114,7 +92,9 @@ def betfair(request):
                 fid = m.group(1)
                 home_team = m.group(3)
                 away_team = m.group(5)
-                match_time = datetime.strptime(match_date + " " + m.group(7)[-5:], "%a %d %b %Y %H:%M").replace(tzinfo=pytz.timezone("Europe/London"))
+                print match_date + " " + m.group(7)[-5:]
+                match_time = datetime.strptime(match_date + " " + m.group(7)[-5:], "%a %d %b %Y %H:%M")
+                print match_time
                 odds = [m.group(10).strip(), m.group(13).strip(), m.group(16).strip()]
                 odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
                 odd.save()
@@ -127,4 +107,35 @@ def betfair(request):
                 game.save()
             except ValueError:
                 pass
-    return Response(query_market("BF"))
+    return market("BF")
+
+
+@api_view(['GET'])
+def query(request):
+    if "src" in request.GET:
+        src = request.GET["src"]
+        markets = market(src)
+        if markets is not None:
+            return Response(markets)
+        else:
+            return crawl(request)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def crawl(request):
+    if "src" in request.GET:
+        src = request.GET["src"]
+        if src == "5C":
+            return Response(five())
+        elif src == "HK-CH":
+            return Response(hkjc("ch"))
+        elif src == "HK-EN":
+            return Response(hkjc("en"))
+        elif src == "BF":
+            return Response(betfair())
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

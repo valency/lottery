@@ -11,18 +11,19 @@ class Odd(models.Model):
 
 
 class Market(models.Model):
-    src = models.CharField(max_length=2, choices=(
+    src = models.CharField(max_length=5, choices=(
         ('5C', '500'),
-        ('HK', 'HKJC'),
+        ('HK-CH', 'HKJC(Chinese)'),
+        ('HK-EN', 'HKJC(English)'),
         ('MS', 'MacauSlot'),
         ('BF', 'Betfair')
     ))
     market = models.CharField(max_length=16)
-    update = models.DateTimeField()
-    t = models.DateTimeField()
-    home = models.CharField(max_length=64)
-    away = models.CharField(max_length=64)
-    odd = models.ForeignKey(Odd)
+    update = models.DateTimeField(null=True)
+    t = models.DateTimeField(null=True)
+    home = models.CharField(max_length=64, null=True)
+    away = models.CharField(max_length=64, null=True)
+    odd = models.ForeignKey(Odd, null=True)
 
     class Meta:
         unique_together = ("src", "market")
