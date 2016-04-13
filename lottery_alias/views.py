@@ -17,8 +17,9 @@ def list_alias(request):
 def add_alias(request):
     zh_cn = request.GET["zh_cn"] or None
     zh_tw = request.GET["zh_tw"] or None
+    en_hk = request.GET["en_hk"] or None
     en_gb = request.GET["en_gb"] or None
-    alias = Alias(zh_cn=zh_cn, zh_tw=zh_tw, en_gb=en_gb)
+    alias = Alias(zh_cn=zh_cn, zh_tw=zh_tw, en_hk=en_hk, en_gb=en_gb)
     alias.save()
     return Response(AliasSerializer(alias).data)
 
