@@ -12,11 +12,11 @@ class Odd(models.Model):
 
 class Market(models.Model):
     src = models.CharField(max_length=5, choices=(
-        ('5C', '500'),
-        ('HK-CH', 'HKJC(Chinese)'),
-        ('HK-EN', 'HKJC(English)'),
-        ('MS', 'MacauSlot'),
-        ('BF', 'Betfair')
+        ('5C', 'http://www.500.com/'),
+        ('HK-CH', 'http://www.hkjc.com/'),
+        ('HK-EN', 'http://www.hkjc.com/'),
+        ('MS', 'http://www.macauslot.com/'),
+        ('BF', 'http://www.betfair.com/')
     ))
     market = models.CharField(max_length=16)
     update = models.DateTimeField(null=True)
