@@ -3,6 +3,14 @@ import urllib2
 import xml.etree.ElementTree
 from datetime import datetime
 
+SUPPORT_PLATFORMS = (
+    ('5C', 'http://www.500.com/'),
+    ('HK-CH', 'http://www.hkjc.com/'),
+    ('HK-EN', 'http://www.hkjc.com/'),
+    ('MS', 'http://www.macauslot.com/'),
+    ('BF', 'http://www.betfair.com/')
+)
+
 
 def print_green(prt):
     return "\033[92m {}\033[00m".format(prt)

@@ -1,5 +1,7 @@
 from django.db import models
 
+from lottery.common import *
+
 
 class Odd(models.Model):
     home = models.FloatField()
@@ -11,13 +13,7 @@ class Odd(models.Model):
 
 
 class Market(models.Model):
-    src = models.CharField(max_length=5, choices=(
-        ('5C', 'http://www.500.com/'),
-        ('HK-CH', 'http://www.hkjc.com/'),
-        ('HK-EN', 'http://www.hkjc.com/'),
-        ('MS', 'http://www.macauslot.com/'),
-        ('BF', 'http://www.betfair.com/')
-    ))
+    src = models.CharField(max_length=5, choices=SUPPORT_PLATFORMS)
     market = models.CharField(max_length=16)
     update = models.DateTimeField(null=True)
     t = models.DateTimeField(null=True)

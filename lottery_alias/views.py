@@ -15,13 +15,22 @@ def list_alias(request):
 
 @api_view(['GET'])
 def add_alias(request):
-    zh_cn = request.GET["zh_cn"] or None
-    zh_tw = request.GET["zh_tw"] or None
-    en_hk = request.GET["en_hk"] or None
-    en_gb = request.GET["en_gb"] or None
-    alias = Alias(zh_cn=zh_cn, zh_tw=zh_tw, en_hk=en_hk, en_gb=en_gb)
-    alias.save()
-    return Response(AliasSerializer(alias).data)
+    if "s" in request.GET:
+        s = list(set(request.GET["s"].split(",")))
+        if "id" in request.GET:
+            try:
+                alias = Alias.objects.get(id=request.GET["id"])
+                alias.list = alias.list.append(s)
+                alias.save()
+                return Response(AliasSerializer(alias).data)
+            except ObjectDoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            alias = Alias(list=s)
+            alias.save()
+            return Response(AliasSerializer(alias).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

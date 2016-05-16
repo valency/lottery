@@ -8,5 +8,6 @@ router = routers.DefaultRouter()
 urlpatterns = [
     url(r'', include(router.urls)),
     url(r'query/$', views.query),
-    url(r'crawl/$', views.crawl)
+    url(r'crawl/$', views.crawl),
+    url(r'search/$', views.search)
 ]

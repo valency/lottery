@@ -9,7 +9,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from lib.langconv import *
-from lottery.common import *
 from serializers import *
 
 
@@ -82,32 +81,56 @@ def hkjc(lang):
 
 def betfair():
     update = datetime.now()
-    for coupon_id in range(1, 7):
-        url = "http://www.betfair.com/exchange/football/coupon?id=" + str(coupon_id)
-        r = re.compile(r"<a href=\"/exchange/football/event\?id=(\d*?)\"(.*?)<span class=\"home-team\">(.*?)</span>(.*?)<span class=\"away-team\">(.*?)</span>(.*?)<span class=\"start-time \">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>", re.MULTILINE | re.DOTALL)
-        content = load_url(url)
-        match_date = re.search("coupon for (.*?)\. Get", content).group(1)
-        for m in r.finditer(content):
+    weekday = (datetime.today().weekday() + 2) % 7
+    for coupon_id in range(weekday, weekday + 2):
+        for page in range(1, 2):
             try:
-                fid = m.group(1)
-                home_team = m.group(3)
-                away_team = m.group(5)
-                print match_date + " " + m.group(7)[-5:]
-                match_time = datetime.strptime(match_date + " " + m.group(7)[-5:], "%a %d %b %Y %H:%M")
-                print match_time
-                odds = [m.group(10).strip(), m.group(13).strip(), m.group(16).strip()]
-                odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
-                odd.save()
-                game, _ = Market.objects.update_or_create(src='BF', market=fid)
-                game.update = update
-                game.t = match_time
-                game.home = home_team
-                game.away = away_team
-                game.odd = odd
-                game.save()
-            except ValueError:
+                url = "http://www.betfair.com/exchange/football/coupon?goingInPlay=true&id=" + str(coupon_id) + "&fdcPage=" + str(page)
+                log("BetFair: " + url)
+                r = re.compile(r"<a href=\"/exchange/football/event\?id=(\d*?)\"(.*?)<span class=\"home-team\">(.*?)</span>(.*?)<span class=\"away-team\">(.*?)</span>(.*?)<span class=\"start-time \">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>", re.MULTILINE | re.DOTALL)
+                content = load_url(url)
+                match_date = re.search("coupon for (.*?)\. Get", content).group(1)
+                for m in r.finditer(content):
+                    try:
+                        fid = m.group(1)
+                        home_team = m.group(3)
+                        away_team = m.group(5)
+                        match_time = datetime.strptime(match_date + " " + m.group(7)[-5:], "%a %d %b %Y %H:%M")
+                        odds = [m.group(10).strip(), m.group(13).strip(), m.group(16).strip()]
+                        odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
+                        odd.save()
+                        game, _ = Market.objects.update_or_create(src='BF', market=fid)
+                        game.update = update
+                        game.t = match_time
+                        game.home = home_team
+                        game.away = away_team
+                        game.odd = odd
+                        game.save()
+                    except ValueError:
+                        pass
+            except:
                 pass
     return market("BF")
+
+
+@api_view(['GET'])
+def search(request):
+    if "src" in request.GET:
+        src = request.GET["src"]
+        if "home" in request.GET:
+            keyword = request.GET["home"]
+            m = Market.objects.filter(src=src, home=keyword)
+        elif "away" in request.GET:
+            keyword = request.GET["away"]
+            m = Market.objects.filter(src=src, away=keyword)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if m is not None:
+            return Response(MarketSerializer(m, many=True).data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
