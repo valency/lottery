@@ -82,8 +82,8 @@ def hkjc(lang):
 def betfair():
     update = datetime.now()
     weekday = (datetime.today().weekday() + 2) % 7
-    for coupon_id in range(weekday, weekday + 2):
-        for page in range(1, 2):
+    for coupon_id in range(weekday, weekday + 3):
+        for page in range(1, 3):
             try:
                 url = "http://www.betfair.com/exchange/football/coupon?goingInPlay=true&id=" + str(coupon_id) + "&fdcPage=" + str(page)
                 log("BetFair: " + url)
