@@ -63,3 +63,6 @@ target/
 
 # Project
 .idea
+*.sqlite3
+migrations/
+static/

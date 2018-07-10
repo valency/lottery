@@ -1,7 +1,7 @@
 from django.conf.urls import url, include
 from rest_framework import routers
 
-import views
+from lottery_market_asian import views
 
 router = routers.DefaultRouter()
 

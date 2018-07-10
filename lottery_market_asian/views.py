@@ -9,7 +9,7 @@ from lottery.common import *
 
 @api_view(['GET'])
 def macau_slot(request):
-    url = "http://web.macauslot.com/soccer/xml/odds/odds_config.xml?nocache=" + str(datetime.now())
+    url = "http://nicpu1.cse.ust.hk/lottery/macauslot/soccer/xml/odds/odds_config.xml?nocache=" + str(datetime.now())
     configs = load_xml(url)
     games = []
     for config in configs.findall("Fixture"):
@@ -22,7 +22,7 @@ def macau_slot(request):
             "away": config.attrib["sa"],
             "t": t
         })
-    odds = load_xml("http://web.macauslot.com/soccer/xml/odds/winodds.xml?nocache=" + str(datetime.now()))
+    odds = load_xml("http://nicpu1.cse.ust.hk/lottery/macauslot/soccer/xml/odds/winodds.xml?nocache=" + str(datetime.now()))
     for odd in odds.findall("Fixture"):
         game_index = dict_search(games, "id", odd.attrib["id"])
         if game_index is not None:

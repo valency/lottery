@@ -19,7 +19,7 @@ class Market(models.Model):
     t = models.DateTimeField(null=True)
     home = models.CharField(max_length=64, null=True)
     away = models.CharField(max_length=64, null=True)
-    odd = models.ForeignKey(Odd, null=True)
+    odd = models.ForeignKey(Odd, null=True, on_delete=models.DO_NOTHING)
 
     class Meta:
         unique_together = ("src", "market")

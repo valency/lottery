@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from lib.langconv import *
-from serializers import *
+from .serializers import *
 
 
 def market(src):
@@ -52,7 +52,7 @@ def five():
 
 
 def hkjc(lang):
-    url = "http://bet.hkjc.com/football/index.aspx?lang=" + lang
+    url = "http://nicpu1.cse.ust.hk/lottery/hkjc/football/index.aspx?lang=" + lang
     if lang == "en":
         r = re.compile(r"rmid(.*?)\">(.*?)title=\"Head to Head\">(.*?) <label class='lblvs'>vs</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
     elif lang == "ch":
@@ -63,8 +63,8 @@ def hkjc(lang):
     update = datetime.now()
     for m in r.finditer(content):
         fid = m.group(1)
-        home_team = Converter('zh-hans').convert(m.group(3).decode('utf-8')).encode('utf-8')
-        away_team = Converter('zh-hans').convert(m.group(4).decode('utf-8')).encode('utf-8')
+        home_team = Converter('zh-hans').convert(m.group(3)).encode('utf8')
+        away_team = Converter('zh-hans').convert(m.group(4)).encode('utf8')
         match_time = datetime.strptime(str(date.today().year) + "-" + m.group(6)[3:5] + "-" + m.group(6)[:2] + m.group(6)[5:], "%Y-%m-%d %H:%M")
         odds = [m.group(8), m.group(10), m.group(12)]
         odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
@@ -85,7 +85,7 @@ def betfair():
     for coupon_id in range(weekday, weekday + 3):
         for page in range(1, 3):
             try:
-                url = "http://www.betfair.com/exchange/football/coupon?goingInPlay=true&id=" + str(coupon_id) + "&fdcPage=" + str(page)
+                url = "http://nicpu1.cse.ust.hk/lottery/betfair/exchange/football/coupon?goingInPlay=true&id=" + str(coupon_id) + "&fdcPage=" + str(page)
                 log("BetFair: " + url)
                 r = re.compile(r"<a href=\"/exchange/football/event\?id=(\d*?)\"(.*?)<span class=\"home-team\">(.*?)</span>(.*?)<span class=\"away-team\">(.*?)</span>(.*?)<span class=\"start-time \">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>", re.MULTILINE | re.DOTALL)
                 content = load_url(url)
