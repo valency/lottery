@@ -141,7 +141,7 @@ def query(request):
         if markets is not None:
             return Response(markets)
         else:
-            return crawl(request)
+            return do_crawl(src)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -149,16 +149,19 @@ def query(request):
 @api_view(['GET'])
 def crawl(request):
     if "src" in request.GET:
-        src = request.GET["src"]
-        if src == "5C":
-            return Response(five())
-        elif src == "HK-CH":
-            return Response(hkjc("ch"))
-        elif src == "HK-EN":
-            return Response(hkjc("en"))
-        elif src == "BF":
-            return Response(betfair())
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return do_crawl(request.GET["src"])
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+def do_crawl(src):
+    if src == "5C":
+        return Response(five())
+    elif src == "HK-CH":
+        return Response(hkjc("ch"))
+    elif src == "HK-EN":
+        return Response(hkjc("en"))
+    elif src == "BF":
+        return Response(betfair())
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
