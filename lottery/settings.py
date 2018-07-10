@@ -64,7 +64,7 @@ DATABASES = {
         'NAME': 'lottery',
         'USER': 'postgres',
         'PASSWORD': '',
-        'HOST': 'localhost',
+        'HOST': 'server-postgres',
         'PORT': '5432',
     }
 }
