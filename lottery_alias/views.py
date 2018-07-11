@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view

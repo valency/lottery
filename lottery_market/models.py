@@ -1,6 +1,6 @@
 from django.db import models
 
-from lottery.common import *
+from utils.common import *
 
 
 class Odd(models.Model):

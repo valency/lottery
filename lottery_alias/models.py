@@ -1,7 +1,7 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
-from lottery.common import *
+from utils.common import *
 
 
 class Alias(models.Model):

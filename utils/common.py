@@ -1,7 +1,7 @@
 import json
-import requests
 import xml.etree.ElementTree
-from datetime import datetime
+
+import requests
 
 SUPPORT_PLATFORMS = (
     ('5C', 'http://www.500.com/'),
@@ -12,18 +12,10 @@ SUPPORT_PLATFORMS = (
 )
 
 
-def print_green(prt):
-    return "\033[92m {}\033[00m".format(prt)
-
-
-def log(msg):
-    print(print_green("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "] ") + msg)
-
-
-def load_url(url, encoding=None):
+def load_url(url, encoding='UTF-8'):
     response = requests.get(url).content
     if encoding is not None:
-        response = response.decode(encoding).encode('utf8')
+        response = response.decode(encoding)
     return response
 
 

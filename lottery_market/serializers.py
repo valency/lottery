@@ -6,6 +6,7 @@ from .models import *
 class OddSerializer(serializers.ModelSerializer):
     class Meta:
         model = Odd
+        fields = '__all__'
 
 
 class MarketSerializer(serializers.ModelSerializer):
@@ -15,3 +16,4 @@ class MarketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Market
+        fields = '__all__'

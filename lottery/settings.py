@@ -17,8 +17,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'rest_framework',
     'lottery_alias',
-    'lottery_market',
-    'lottery_market_asian'
+    'lottery_market'
 )
 
 MIDDLEWARE_CLASSES = (

@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
-
 import re
-from datetime import date
+from datetime import datetime
 
+from deeputils.common import log
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from lib.langconv import *
+from utils.langconv import *
 from .serializers import *
 
 
@@ -30,15 +29,17 @@ def market(src):
 
 def five():
     url = "http://trade.500.com/jczq/"
-    r = re.compile(r"<tr zid=(.*?)fid=\"(.*?)\" homesxname=\"(.*?)\" awaysxname=\"(.*?)\"(.*?)class=\"match_time\" title=\"(.*?)\"(.*?)<div class=\"bet_odds\">(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)</div>(.*?)</tr>", re.MULTILINE | re.DOTALL)
+    r = re.compile(r"<tr zid=(.*?)开赛时间：(.*?)\"(.*?)<a href=(.*?)title=\"(.*?)\"(.*?)<a href=(.*?)title=\"(.*?)\"(.*?)<div class=\"bet_odds\">(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)</span></div><div class=\"bet_odds bet_odds_2\">(.*?)<a href=\"http://odds.500.com/fenxi/shuju-(.*?)\.shtml\" target=\"_blank\">析</a>(.*?)</tr>", re.MULTILINE | re.DOTALL)
     content = load_url(url, "GBK")
     update = datetime.now()
     for m in r.finditer(content):
-        fid = m.group(2)
-        home_team = m.group(3).replace(" ", "")
-        away_team = m.group(4).replace(" ", "")
-        match_time = datetime.strptime(m.group(6).replace("开赛时间：", ""), "%Y-%m-%d %H:%M")
-        odds = [float(m.group(9)), float(m.group(11)), float(m.group(13))]
+        if '未开售' in m.group(0):
+            continue
+        fid = m.group(18)
+        home_team = m.group(5).replace(" ", "")
+        away_team = m.group(8).replace(" ", "")
+        match_time = datetime.strptime(m.group(2), "%Y-%m-%d %H:%M")
+        odds = [float(m.group(11)), float(m.group(13)), float(m.group(15))]
         odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
         odd.save()
         game, _ = Market.objects.update_or_create(src='5C', market=fid)
@@ -52,21 +53,15 @@ def five():
 
 
 def hkjc(lang):
-    url = "http://nicpu1.cse.ust.hk/lottery/hkjc/football/index.aspx?lang=" + lang
-    if lang == "en":
-        r = re.compile(r"rmid(.*?)\">(.*?)title=\"Head to Head\">(.*?) <label class='lblvs'>vs</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
-    elif lang == "ch":
-        r = re.compile(r"rmid(.*?)\">(.*?)title=\"對賽往績\">(.*?) <label class='lblvs'>對</label> (.*?)</a></span></td>(.*?)<td class=\"cesst ttgR2\"><span>(.*?)</span></td>(.*?)HAD_H\">(.*?)</span></a></span></td>(.*?)HAD_D\">(.*?)</span></a></span></td>(.*?)HAD_A\">(.*?)</span></a></span></td>", re.MULTILINE | re.DOTALL)
-    else:
-        return None
-    content = load_url(url)
+    url = "http://nicpu1.cse.ust.hk:9001/lottery/hkjc/football/getJSON.aspx?jsontype=index.aspx"
+    content = load_json(url)
     update = datetime.now()
-    for m in r.finditer(content):
-        fid = m.group(1)
-        home_team = Converter('zh-hans').convert(m.group(3)).encode('utf8')
-        away_team = Converter('zh-hans').convert(m.group(4)).encode('utf8')
-        match_time = datetime.strptime(str(date.today().year) + "-" + m.group(6)[3:5] + "-" + m.group(6)[:2] + m.group(6)[5:], "%Y-%m-%d %H:%M")
-        odds = [m.group(8), m.group(10), m.group(12)]
+    for m in content:
+        fid = m['matchIDinofficial']
+        home_team = Converter('zh-hans').convert(m['homeTeam']['teamName' + lang.upper()])
+        away_team = Converter('zh-hans').convert(m['awayTeam']['teamName' + lang.upper()])
+        match_time = datetime.strptime(m['matchTime'], "%Y-%m-%dT%H:%M:%S+08:00")
+        odds = [float(m['hadodds']['H'].replace('100@', '')), float(m['hadodds']['D'].replace('100@', '')), float(m['hadodds']['A'].replace('100@', ''))]
         odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
         odd.save()
         game, _ = Market.objects.update_or_create(src='HK-' + lang.upper(), market=fid)
@@ -80,35 +75,30 @@ def hkjc(lang):
 
 
 def betfair():
+    url = "http://nicpu1.cse.ust.hk:9001/lottery/betfair/sport/football"
+    r = re.compile('<li class="com-coupon-line-new-layout layout-1 avb-row avb-table market-avb quarter-template market-2-columns">(.*?)</ul>(.*?)</li>', re.MULTILINE | re.DOTALL)
+    content = load_url(url)
     update = datetime.now()
-    weekday = (datetime.today().weekday() + 2) % 7
-    for coupon_id in range(weekday, weekday + 3):
-        for page in range(1, 3):
+    for m in r.finditer(content):
+        rr = re.compile(r'data-event="(.*?) v (.*?)"(.*?)<a href="/sport/football\?gaTab=(.*?)=&gaZone=Main&bseId=(.*?)&bsContext=REAL&bsmSt=(.*?)&bsUUID(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>', re.MULTILINE | re.DOTALL)
+        mm = rr.search(m.group(0))
+        if mm is not None:
             try:
-                url = "http://nicpu1.cse.ust.hk/lottery/betfair/exchange/football/coupon?goingInPlay=true&id=" + str(coupon_id) + "&fdcPage=" + str(page)
-                log("BetFair: " + url)
-                r = re.compile(r"<a href=\"/exchange/football/event\?id=(\d*?)\"(.*?)<span class=\"home-team\">(.*?)</span>(.*?)<span class=\"away-team\">(.*?)</span>(.*?)<span class=\"start-time \">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>(.*?)back(.*?)<span class=\"price\">(.*?)</span>", re.MULTILINE | re.DOTALL)
-                content = load_url(url)
-                match_date = re.search("coupon for (.*?)\. Get", content).group(1)
-                for m in r.finditer(content):
-                    try:
-                        fid = m.group(1)
-                        home_team = m.group(3)
-                        away_team = m.group(5)
-                        match_time = datetime.strptime(match_date + " " + m.group(7)[-5:], "%a %d %b %Y %H:%M")
-                        odds = [m.group(10).strip(), m.group(13).strip(), m.group(16).strip()]
-                        odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
-                        odd.save()
-                        game, _ = Market.objects.update_or_create(src='BF', market=fid)
-                        game.update = update
-                        game.t = match_time
-                        game.home = home_team
-                        game.away = away_team
-                        game.odd = odd
-                        game.save()
-                    except ValueError:
-                        pass
-            except:
+                fid = mm.group(5)
+                home_team = mm.group(1)
+                away_team = mm.group(2)
+                match_time = datetime.fromtimestamp(float(mm.group(6)) / 1000)
+                odds = [float(mm.group(9).strip()), float(mm.group(12).strip()), float(mm.group(15).strip())]
+                odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
+                odd.save()
+                game, _ = Market.objects.update_or_create(src='BF', market=fid)
+                game.update = update
+                game.t = match_time
+                game.home = home_team
+                game.away = away_team
+                game.odd = odd
+                game.save()
+            except ValueError:
                 pass
     return market("BF")
 
