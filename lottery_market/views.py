@@ -76,19 +76,19 @@ def hkjc(lang):
 
 def betfair():
     url = "http://nicpu1.cse.ust.hk:9001/lottery/betfair/sport/football"
-    r = re.compile('<li class="com-coupon-line-new-layout layout-1 avb-row avb-table market-avb quarter-template market-2-columns">(.*?)</ul>(.*?)</li>', re.MULTILINE | re.DOTALL)
+    r = re.compile('<li class="com-coupon-line-new-layout layout-1 avb-row avb-table market-avb quarter-template market-2-columns">(.*?)ui-nav event-team-container ui-top event-link', re.MULTILINE | re.DOTALL)
     content = load_url(url)
     update = datetime.now()
     for m in r.finditer(content):
-        rr = re.compile(r'data-event="(.*?) v (.*?)"(.*?)<a href="/sport/football\?gaTab=(.*?)=&gaZone=Main&bseId=(.*?)&bsContext=REAL&bsmSt=(.*?)&bsUUID(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>', re.MULTILINE | re.DOTALL)
+        rr = re.compile(r'market-3-runners(.*?)data-event="(.*?) v (.*?)"(.*?)<a href="/sport/football\?gaTab=(.*?)=&gaZone=Main&bseId=(.*?)&bsContext=REAL&bsmSt=(.*?)&bsUUID(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>(.*?)ui-runner-price ui-(.*?) "> (.*?) </span> </a> </li>', re.MULTILINE | re.DOTALL)
         mm = rr.search(m.group(0))
         if mm is not None:
             try:
-                fid = mm.group(5)
-                home_team = mm.group(1)
-                away_team = mm.group(2)
-                match_time = datetime.fromtimestamp(float(mm.group(6)) / 1000)
-                odds = [float(mm.group(9).strip()), float(mm.group(12).strip()), float(mm.group(15).strip())]
+                fid = mm.group(6)
+                home_team = mm.group(2)
+                away_team = mm.group(3)
+                match_time = datetime.fromtimestamp(float(mm.group(7)) / 1000)
+                odds = [float(mm.group(10).strip()), float(mm.group(13).strip()), float(mm.group(16).strip())]
                 odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
                 odd.save()
                 game, _ = Market.objects.update_or_create(src='BF', market=fid)
