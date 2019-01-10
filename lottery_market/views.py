@@ -29,17 +29,17 @@ def market(src):
 
 def five():
     url = "http://trade.500.com/jczq/"
-    r = re.compile(r"<tr zid=(.*?)开赛时间：(.*?)\"(.*?)<a href=(.*?)title=\"(.*?)\"(.*?)<a href=(.*?)title=\"(.*?)\"(.*?)<div class=\"bet_odds\">(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)data-sp=\"(.*?)\"(.*?)</span></div><div class=\"bet_odds bet_odds_2\">(.*?)<a href=\"http://odds.500.com/fenxi/shuju-(.*?)\.shtml\" target=\"_blank\">析</a>(.*?)</tr>", re.MULTILINE | re.DOTALL)
+    r = re.compile(r'<tr class="bet-tb-tr" data-fixtureid="(.*?)" data-infomatchid="(.*?)" data-homesxname="(.*?)" data-awaysxname="(.*?)" data-matchdate="(.*?)" data-matchtime="(.*?)"(.*?)data-type="nspf" data-value="(.*?)" data-sp="(.*?)">(.*?)data-type="nspf" data-value="(.*?)" data-sp="(.*?)">(.*?)data-type="nspf" data-value="(.*?)" data-sp="(.*?)">', re.MULTILINE | re.DOTALL)
     content = load_url(url, "GBK")
     update = datetime.now()
     for m in r.finditer(content):
         if '未开售' in m.group(0):
             continue
-        fid = m.group(18)
-        home_team = m.group(5).replace(" ", "")
-        away_team = m.group(8).replace(" ", "")
-        match_time = datetime.strptime(m.group(2), "%Y-%m-%d %H:%M")
-        odds = [float(m.group(11)), float(m.group(13)), float(m.group(15))]
+        fid = m.group(1)
+        home_team = m.group(3).replace(" ", "")
+        away_team = m.group(4).replace(" ", "")
+        match_time = datetime.strptime(m.group(5) + ' ' + m.group(6), "%Y-%m-%d %H:%M")
+        odds = [float(m.group(9)), float(m.group(12)), float(m.group(15))]
         odd = Odd(home=odds[0], draw=odds[1], away=odds[2])
         odd.save()
         game, _ = Market.objects.update_or_create(src='5C', market=fid)
@@ -53,7 +53,9 @@ def five():
 
 
 def hkjc(lang):
+    # TODO
     url = "http://nicpu1.cse.ust.hk:9001/lottery/hkjc/football/getJSON.aspx?jsontype=index.aspx"
+    print(requests.Session().get(url).content.decode('UTF-8'))
     content = load_json(url)
     update = datetime.now()
     for m in content:

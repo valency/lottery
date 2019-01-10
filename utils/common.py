@@ -13,7 +13,7 @@ SUPPORT_PLATFORMS = (
 
 
 def load_url(url, encoding='UTF-8'):
-    response = requests.get(url).content
+    response = requests.Session().get(url).content
     if encoding is not None:
         response = response.decode(encoding)
     return response
